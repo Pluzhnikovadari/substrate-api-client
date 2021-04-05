@@ -1,7 +1,5 @@
 # substrate-api-client
 
-![badge](https://img.shields.io/badge/substrate-2.0.0-success)
-
 <p align="center">
 <img src=./web3_foundation_grants_badge_black.svg width = 400>
 </p>
@@ -35,7 +33,6 @@ To build the test node, execute the following steps:
 
     git clone https://github.com/scs/substrate-node-template
     cd substrate-test-nodes/
-    git checkout v2.0.0-alpha.6-api-client
     cargo build --release
 
 Run the node:
@@ -98,7 +95,7 @@ Shows how to fetch and decode a custom storage struct.
                                   "Kitties",
                                   Some(index.encode())).unwrap();
 
-    let res_vec = hexstr_to_vec(res_str);
+    let res_vec = Vec::from_hex(res_str);
 
     // Type annotations are needed here to know that to decode into.
     let kitty: Kitty = Decode::decode(&mut res_vec.as_slice()).unwrap();

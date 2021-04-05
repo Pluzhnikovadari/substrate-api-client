@@ -5,6 +5,8 @@ authors = ["Supercomputing Systems AG <info@scs.ch>"]
 edition = "2018"
 
 [dependencies]
+futures = {version = "0.3.*" }
+tokio = {version = "0.2.*", features = ["full"]}
 env_logger      = { version = "0.7", optional = true }
 ws              = { version = "0.9.1", optional = true, features = ["ssl"] }
 hex             = { version = "0.4", default-features = false }
@@ -27,12 +29,6 @@ features = ["derive"]
 version = "1.3.1"
 default-features = false
 
-[dependencies.runtime_io]
-git = "https://github.com/paritytech/substrate.git" 
-rev = "a208da16"
-package = "sp-io"
-default-features=false
-
 [dependencies.metadata]
 git = "https://github.com/paritytech/substrate.git" 
 rev = "a208da16"
@@ -50,6 +46,13 @@ git = "https://github.com/paritytech/substrate.git"
 rev = "a208da16"
 package = "pallet-balances"
 default-features=false
+
+[dependencies.template]
+git = "https://github.com/paritytech/substrate.git"
+rev = "a208da16"
+package = "pallet-template"
+default-features=false
+
 
 [dependencies.system]
 git = "https://github.com/paritytech/substrate.git" 
@@ -81,8 +84,8 @@ rev = "a208da16"
 optional = true
 
 [dev-dependencies.node_template_runtime]
-git = "https://github.com/scs/substrate-api-client-test-node"
-rev = "01ef30a9"
+git = "https://github.com/substrate-developer-hub/substrate-node-template"
+rev = "4d97032"
 package = "node-template-runtime"
 
 [dev-dependencies]
@@ -108,7 +111,6 @@ std = [
     "sc-rpc-api",
 	"sp-core/std",
 	"codec/std",
-	"runtime_io/std",
 	"metadata/std",
 	"sp-version/std",
 	"balances/std",

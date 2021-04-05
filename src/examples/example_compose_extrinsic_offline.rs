@@ -13,61 +13,58 @@
     limitations under the License.
 */
 
-//! This examples shows how to use the compose_extrinsic_offline macro which generates an extrinsic
-//! without asking the node for nonce and does not need to know the metadata
+//! This examples shows how to use the compose_extrinsic macro to create an extrinsic for any (custom)
+//! module, whereas the desired module and call are supplied as a string.
+
 
 use clap::{load_yaml, App};
-
 use keyring::AccountKeyring;
-use node_template_runtime::{BalancesCall, Call, Header};
 use sp_core::crypto::Pair;
-use sp_runtime::MultiAddress;
+use std::env;
+use node_template_runtime::pallet_template::Trait;
 
-use substrate_api_client::{
-    compose_extrinsic_offline, UncheckedExtrinsicV4, Api, XtStatus,
-};
+
+use substrate_api_client::{compose_extrinsic, Api, UncheckedExtrinsicV4, XtStatus};
+use node_template_runtime::Event;
+
+
 
 fn main() {
+    let args: Vec<String> = env::args().collect();
     env_logger::init();
     let url = get_node_url_from_cli();
 
     // initialize api and set the signer (sender) that is used to sign the extrinsics
     let from = AccountKeyring::Alice.pair();
-    let api = Api::new(url).set_signer(from);
+    let api = Api::new(url).map(|api| api.set_signer(from)).unwrap();
 
-    // Information for Era for mortal transactions
-    let head = api.get_finalized_head().unwrap();
-    let h: Header = api.get_header(Some(head)).unwrap();
-    let period = 5;
+    // set the recipient
+    let to = AccountKeyring::Bob.to_account_id();
 
-    println!(
-        "[+] Alice's Account Nonce is {}\n",
-        api.get_nonce().unwrap()
-    );
 
-    // define the recipient
-    let to = MultiAddress::Id(AccountKeyring::Bob.to_account_id());
 
-    // compose the extrinsic with all the element
+    // call Balances::transfer
+    // the names are given as strings
+    let nonce = 1;
     #[allow(clippy::redundant_clone)]
-    let xt: UncheckedExtrinsicV4<_> = compose_extrinsic_offline!(
-        api.clone().signer.unwrap(),
-        Call::Balances(BalancesCall::transfer(to.clone(), 42)),
-        api.get_nonce().unwrap(),
-        Era::mortal(period, h.number.into()),
-        api.genesis_hash,
-        head,
-        api.runtime_version.spec_version,
-        api.runtime_version.transaction_version
+    let xt: UncheckedExtrinsicV4<_> = compose_extrinsic!(
+        api.clone(),
+        "Balances",
+        "transfer",
+        GenericAddress::Id(to),
+        Compact(42 as u128)
     );
+
+    //template::Call::do_something(32 as u32);
+    //template::Something::put(something);
+    //put(32);
+
 
     println!("[+] Composed Extrinsic:\n {:?}\n", xt);
 
-    // send and watch extrinsic until finalized
-    let blockh = api
-        .send_extrinsic(xt.hex_encode(), XtStatus::Finalized)
-        .unwrap();
-    println!("[+] Transaction got finalized in block {:?}", blockh);
+    // send and watch extrinsic until InBlock
+    let tx_hash = await api
+        .send_extrinsic(xt.hex_encode(), XtStatus::InBlock);
 }
 
 pub fn get_node_url_from_cli() -> String {

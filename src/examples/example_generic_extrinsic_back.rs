@@ -13,52 +13,58 @@
     limitations under the License.
 */
 
+//! This examples shows how to use the compose_extrinsic macro to create an extrinsic for any (custom)
+//! module, whereas the desired module and call are supplied as a string.
+
+
 use clap::{load_yaml, App};
 use keyring::AccountKeyring;
 use sp_core::crypto::Pair;
+use std::env;
+use node_template_runtime::pallet_template::Trait;
 
-use substrate_api_client::{
-    compose_extrinsic, UncheckedExtrinsicV4, Api, XtStatus,
-};
-use std::fs;
+
+use substrate_api_client::{compose_extrinsic, Api, UncheckedExtrinsicV4, XtStatus};
+use node_template_runtime::Event;
+
 
 
 fn main() {
-    let num = fs::read_to_string("./data.txt")
-        .expect("Something went wrong reading the file");
-    let number: u128 = match num.parse() {
-        Ok(n) => {
-            n
-        },
-        Err(_) => {
-            eprintln!("error");
-            return;
-        },
-    };
+    let args: Vec<String> = env::args().collect();
     env_logger::init();
     let url = get_node_url_from_cli();
 
+    // initialize api and set the signer (sender) that is used to sign the extrinsics
     let from = AccountKeyring::Alice.pair();
     let api = Api::new(url).map(|api| api.set_signer(from)).unwrap();
 
+    // set the recipient
     let to = AccountKeyring::Bob.to_account_id();
 
+
+    // call Balances::transfer
+    // the names are given as strings
     #[allow(clippy::redundant_clone)]
     let xt: UncheckedExtrinsicV4<_> = compose_extrinsic!(
         api.clone(),
         "Balances",
         "transfer",
         GenericAddress::Id(to),
-        Compact(number as u128)
+        Compact(42 as u128)
     );
+
+    //template::Call::do_something(32 as u32);
+    //template::Something::put(something);
+    //put(32);
+
 
     println!("[+] Composed Extrinsic:\n {:?}\n", xt);
 
-    let tx_hash = api
+    // send and watch extrinsic until InBlock
+    let tx_hash = await api
         .send_extrinsic(xt.hex_encode(), XtStatus::InBlock)
         .unwrap();
-    println!("[+] Transaction got included. Hash: {:?}\n", tx_hash);
-    
+    println!("[+] Transaction got included. Hash: {:?}", tx_hash);
 }
 
 pub fn get_node_url_from_cli() -> String {
@@ -66,7 +72,7 @@ pub fn get_node_url_from_cli() -> String {
     let matches = App::from_yaml(yml).get_matches();
 
     let node_ip = matches.value_of("node-server").unwrap_or("ws://127.0.0.1");
-    let node_port = matches.value_of("node-port").unwrap_or("9945");
+    let node_port = matches.value_of("node-port").unwrap_or("9944");
     let url = format!("{}:{}", node_ip, node_port);
     println!("Interacting with node on {}\n", url);
     url
